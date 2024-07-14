@@ -6,6 +6,5 @@ nltk
 contractions
 biopython
 spacy
-pickle
 re
 string 
