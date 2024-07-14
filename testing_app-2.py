@@ -301,11 +301,13 @@ user_input = st.text_area("Enter your text here:")
 # Predict button
 if st.button("Predict"):
     if user_input:
-        # Vectorize the user input
-        user_input_tfidf = vectorizer.transform([user_input])
+            preprocessed_input = preprocess_text(user_input)
 
-        # Predict using the loaded model
-        prediction = best_dt_classifier.predict(user_input_tfidf)
+            # Vectorize the preprocessed user input
+            user_input_tfidf = vectorizer.transform([preprocessed_input])
+
+            # Predict using the loaded model
+            prediction = best_dt_classifier.predict(user_input_tfidf)
 
         # Display the result
         if prediction[0] == 1:
