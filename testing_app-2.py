@@ -300,19 +300,29 @@ user_input = st.text_area("Enter your text here:")
 
 # Predict button
 if st.button("Predict"):
-    if user_input:
-            preprocessed_input = preprocess_text(user_input)
+  if user_input:
+    # Define class labels
+    class_labels = {0: "teenagers", 1: "depression"}
 
-            # Vectorize the preprocessed user input
-            user_input_tfidf = vectorizer.transform([preprocessed_input])
+    try:
+        # Preprocess the user input
+        preprocessed_input = preprocess_text(user_input)
 
-            # Predict using the loaded model
-            prediction = best_dt_classifier.predict(user_input_tfidf)
+        # Vectorize the preprocessed user input
+        user_input_tfidf = vectorizer.transform([preprocessed_input])
+
+        # Predict using the loaded model
+        prediction = best_dt_classifier.predict(user_input_tfidf)
+
+        # Map numeric prediction to class label
+        predicted_class = class_labels[prediction[0]]
 
         # Display the result
-        if prediction[0] == 1:
-            st.write("The model predicts that the text indicates signs of depression.")
-        else:
-            st.write("The model predicts that the text does not indicate signs of depression.")
-    else:
-        st.write("Please enter some text to get a prediction.")
+        st.write(f"The model predicts that the text indicates signs of {predicted_class}.")
+        
+    except Exception as e:
+        st.error(f"An error occurred during prediction: {str(e)}")
+
+else:
+    st.write("Please enter some text to get a prediction.")
+
