@@ -31,10 +31,10 @@ with open(os.path.join(save_path, 'best_algo.pkl'), 'wb') as f:
     pickle.dump(best_algo, f)
 """
 
-!pip install nltk
-!pip install streamlit
-!pip install contractions
-!pip install biopython
+pip install nltk
+pip install streamlit
+pip install contractions
+pip install biopython
 
 import streamlit as st
 import pickle
