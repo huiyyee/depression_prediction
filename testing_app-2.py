@@ -43,248 +43,248 @@ import contractions
 import Bio
 import Bio
 
-from Bio import SeqUtils
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.stem import PorterStemmer
-from textblob import TextBlob
-from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import classification_report
-from sklearn.model_selection import GridSearchCV
-from gensim.models import Word2Vec
-from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
+# from Bio import SeqUtils
+# from nltk.corpus import stopwords
+# from nltk.tokenize import word_tokenize
+# from nltk.stem import PorterStemmer
+# from textblob import TextBlob
+# from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer
+# from sklearn.model_selection import train_test_split
+# from sklearn.linear_model import LogisticRegression
+# from sklearn.tree import DecisionTreeClassifier
+# from sklearn.metrics import classification_report
+# from sklearn.model_selection import GridSearchCV
+# from gensim.models import Word2Vec
+# from sklearn.svm import SVC
+# from sklearn.neighbors import KNeighborsClassifier
+# from sklearn.ensemble import RandomForestClassifier
+# from sklearn.metrics import accuracy_score, classification_report
 
-#import dataset
-filepath = "/Users/huiyee/Downloads/Study/Year3Sem1/FYP/preprocessing2.csv"
-new_df = pd.read_csv(filepath)
+# #import dataset
+# filepath = "/Users/huiyee/Downloads/Study/Year3Sem1/FYP/preprocessing2.csv"
+# new_df = pd.read_csv(filepath)
 
-# Function to remove inner spaces within tokens
-def remove_inner_spaces(token_list):
-    return ["".join(token.split()) for token in token_list]
+# # Function to remove inner spaces within tokens
+# def remove_inner_spaces(token_list):
+#     return ["".join(token.split()) for token in token_list]
 
-# Apply the function to the 'port_stem' column
-new_df['cleaned_tokens'] = new_df['port_stem'].apply(eval)  # Convert string representation of list to actual list
-new_df['cleaned_tokens'] = new_df['cleaned_tokens'].apply(remove_inner_spaces)
+# # Apply the function to the 'port_stem' column
+# new_df['cleaned_tokens'] = new_df['port_stem'].apply(eval)  # Convert string representation of list to actual list
+# new_df['cleaned_tokens'] = new_df['cleaned_tokens'].apply(remove_inner_spaces)
 
-# Convert lists of tokens to strings
-new_df['joined_tokens'] = new_df['cleaned_tokens'].apply(lambda tokens: " ".join(tokens))
+# # Convert lists of tokens to strings
+# new_df['joined_tokens'] = new_df['cleaned_tokens'].apply(lambda tokens: " ".join(tokens))
 
-# Drop rows with NaN in 'joined_tokens'
-new_df = new_df.dropna(subset=['joined_tokens'])
+# # Drop rows with NaN in 'joined_tokens'
+# new_df = new_df.dropna(subset=['joined_tokens'])
 
-# Drop rows with empty 'joined_tokens' strings
-new_df = new_df[new_df['joined_tokens'].str.strip() != '']
-
-
-# Initialize the TF-IDF Vectorizer
-vectorizer = TfidfVectorizer()
-
-# Apply the TF-IDF vectorizer to the joined token strings
-tfidf_matrix = vectorizer.fit_transform(new_df['joined_tokens'])
-
-# Verify the shape of the resulting TF-IDF matrix
-print(tfidf_matrix.shape)
-
-X_train, X_test, y_train, y_test = train_test_split(tfidf_matrix, new_df['class'], test_size=0.2, random_state=42)
+# # Drop rows with empty 'joined_tokens' strings
+# new_df = new_df[new_df['joined_tokens'].str.strip() != '']
 
 
-# Initialize the Decision Tree Classifier with the best parameters
-best_dt_classifier = DecisionTreeClassifier(criterion='gini', max_depth=20, min_samples_leaf=2, min_samples_split=2, random_state=42)
+# # Initialize the TF-IDF Vectorizer
+# vectorizer = TfidfVectorizer()
 
-# Fit the classifier to the training data
-best_dt_classifier.fit(X_train, y_train)
+# # Apply the TF-IDF vectorizer to the joined token strings
+# tfidf_matrix = vectorizer.fit_transform(new_df['joined_tokens'])
 
-# Predict the labels for the test set
-y_pred = best_dt_classifier.predict(X_test)
+# # Verify the shape of the resulting TF-IDF matrix
+# print(tfidf_matrix.shape)
 
-# Evaluate the model
-accuracy = accuracy_score(y_test, y_pred)
-report = classification_report(y_test, y_pred)
-
-# Print the accuracy and classification report
-print(f"Accuracy: {accuracy:.4f}")
-
-nltk.download('stopwords')
-
-# Load the pickled files
-save_path = '/Users/huiyee/Downloads/Study/Year3Sem2/FYP Project/backend/'
-
-os.makedirs(save_path, exist_ok=True)
-
-with open(os.path.join(save_path, 'new_df.pkl'), 'wb') as f:
-    pickle.dump(new_df, f)
-
-with open(os.path.join(save_path, 'tfidf_matrix.pkl'), 'wb') as f:
-    pickle.dump(tfidf_matrix, f)
-
-with open(os.path.join(save_path, 'best_dt_classifier.pkl'), 'wb') as f:
-    pickle.dump(best_dt_classifier, f)
-
-# Define preprocessing functions
-def preprocess_text(text):
-    text = text.lower()  # Convert to lowercase
-    text = expand_contractions(text)  # Expand contractions
-    text = transform_chat_words(text)  # Transform chat words
-    text = translate_to_english(text)  # Translate to English
-    text = remove_urls(text)  # Remove URLs
-    text = remove_html_tags(text)  # Remove HTML tags
-    text = remove_punctuation(text)  # Remove punctuation
-    text = remove_digits(text)  # Remove digits
-    text = remove_stopwords(text)  # Remove stopwords
-    tokens = word_tokenize(text)  # Tokenize
-    tokens = remove_special_symbols(tokens)  # Remove special characters
-    tokens = remove_empty_tokens(tokens)  # Remove empty tokens
-    tokens = lemmatize_text(tokens)  # Lemmatize tokens
-    text = ' '.join(tokens)  # Join tokens back into text
-    return text
-
-# Function to expand contractions
-def expand_contractions(text):
-    return contractions.fix(text)
-
-# Chat words mapping dictionary
-chat_word_mapping = {
-    # Your chat word mappings here
-       "afaik": "as far as i know",
-    "afk": "away from keyboard",
-    "asap": "as soon as possible",
-    "atk": "at the keyboard",
-    "atm": "at the moment",
-    "a3": "anytime, anywhere, anyplace",
-    "bak": "back at keyboard",
-    "bbl": "be back later",
-    "bbs": "be back soon",
-    "bfn": "bye for now",
-    "b4n": "bye for now",
-    "brb": "be right back",
-    "brt": "be right there",
-    "btw": "by the way",
-    "b4": "before",
-    "b4n": "bye for now",
-    "cu": "see you",
-    "cul8r": "see you later",
-    "cya": "see you",
-    "faq": "frequently asked questions",
-    "fc": "fingers crossed",
-    "fwiw": "for what it's worth",
-    "fyi": "for your information",
-    "gal": "get a life",
-    "gg": "good game",
-    "gn": "good night",
-    "gmta": "great minds think alike",
-    "gr8": "great!",
-    "g9": "genius",
-    "ic": "i see",
-    "icq": "i seek you (also a chat program)",
-    "ilu": "ilu: i love you",
-    "imho": "in my honest/humble opinion",
-    "imo": "in my opinion",
-    "iow": "in other words",
-    "irl": "in real life",
-    "kiss": "keep it simple, stupid",
-    "ldr": "long distance relationship",
-    "lmao": "laugh my ass off",
-    "lol": "laughing out loud",
-    "ltns": "long time no see",
-    "l8r": "later",
-    "mte": "my thoughts exactly",
-    "m8": "mate",
-    "nrn": "no reply necessary",
-    "oic": "oh i see",
-    "pita": "pain in the ass",
-    "prt": "party",
-    "prw": "parents are watching",
-    "rofl": "rolling on the floor laughing",
-    "roflol": "rolling on the floor laughing out loud",
-    "rotflmao": "rolling on the floor laughing my ass off",
-    "sk8": "skate",
-    "stats": "your sex and age",
-    "asl": "age, sex, location",
-    "thx": "thank you",
-    "ttfn": "ta-ta for now!",
-    "ttyl": "talk to you later",
-    "u2": "you too",
-    "u4e": "yours for ever",
-    "wb": "welcome back",
-    "wtf": "what the fuck",
-    "wtg": "way to go!",
-    "wuf": "where are you from?",
-    "w8": "wait...",
-    "7k": "sick:-d laughter",
-}
-
-# Function to transform chat words
-def transform_chat_words(text):
-    for chat_word, expanded_form in chat_word_mapping.items():
-        text = text.replace(chat_word, expanded_form)
-    return text
-
-def translate_to_english(text):
-    try:
-        blob = TextBlob(text)
-        lang = blob.detect_language()
-        if lang != 'en':
-            translated_blob = blob.translate(to='en')
-            translation = str(translated_blob)
-        else:
-            translation = text
-        return translation
-    except Exception as e:
-        print(f"Translation error: {e}")
-        return None
+# X_train, X_test, y_train, y_test = train_test_split(tfidf_matrix, new_df['class'], test_size=0.2, random_state=42)
 
 
+# # Initialize the Decision Tree Classifier with the best parameters
+# best_dt_classifier = DecisionTreeClassifier(criterion='gini', max_depth=20, min_samples_leaf=2, min_samples_split=2, random_state=42)
 
-# Function to remove URLs
-def remove_urls(text):
-    url_pattern = re.compile(r'https?://\S+|www\.\S+')
-    return url_pattern.sub('', text)
+# # Fit the classifier to the training data
+# best_dt_classifier.fit(X_train, y_train)
 
-# Function to remove HTML tags
-def remove_html_tags(text):
-    clean_text = re.sub(r'<[^>]*>', '', text)
-    return clean_text
+# # Predict the labels for the test set
+# y_pred = best_dt_classifier.predict(X_test)
 
-# Function to remove punctuation
-def remove_punctuation(text):
-    return text.translate(str.maketrans('', '', string.punctuation))
+# # Evaluate the model
+# accuracy = accuracy_score(y_test, y_pred)
+# report = classification_report(y_test, y_pred)
 
-# Function to remove digits
-def remove_digits(text):
-    return re.sub(r'\d+', '', text)
+# # Print the accuracy and classification report
+# print(f"Accuracy: {accuracy:.4f}")
 
-# Function to remove stopwords
-stop_words = set(stopwords.words('english'))
-def remove_stopwords(text):
-    words = text.split()
-    filtered_words = [word for word in words if word.lower() not in stop_words]
-    return ' '.join(filtered_words)
+# nltk.download('stopwords')
 
-# Function to remove special symbols
-def remove_special_symbols(tokens):
-    cleaned_tokens = []
-    for token in tokens:
-        pattern = r'[^a-zA-Z0-9\s]'
-        cleaned_token = re.sub(pattern, '', token)
-        cleaned_tokens.append(cleaned_token)
-    return cleaned_tokens
+# # Load the pickled files
+# save_path = '/Users/huiyee/Downloads/Study/Year3Sem2/FYP Project/backend/'
 
-# Function to remove empty tokens
-def remove_empty_tokens(tokens):
-    return [token for token in tokens if token.strip()]
+# os.makedirs(save_path, exist_ok=True)
 
-# Function to lemmatize text using spaCy
-nlp = spacy.load('en_core_web_sm')
-def lemmatize_text(tokens):
-    doc = nlp(' '.join(tokens))
-    lemmatized_tokens = [token.lemma_ for token in doc]
-    return lemmatized_tokens
+# with open(os.path.join(save_path, 'new_df.pkl'), 'wb') as f:
+#     pickle.dump(new_df, f)
+
+# with open(os.path.join(save_path, 'tfidf_matrix.pkl'), 'wb') as f:
+#     pickle.dump(tfidf_matrix, f)
+
+# with open(os.path.join(save_path, 'best_dt_classifier.pkl'), 'wb') as f:
+#     pickle.dump(best_dt_classifier, f)
+
+# # Define preprocessing functions
+# def preprocess_text(text):
+#     text = text.lower()  # Convert to lowercase
+#     text = expand_contractions(text)  # Expand contractions
+#     text = transform_chat_words(text)  # Transform chat words
+#     text = translate_to_english(text)  # Translate to English
+#     text = remove_urls(text)  # Remove URLs
+#     text = remove_html_tags(text)  # Remove HTML tags
+#     text = remove_punctuation(text)  # Remove punctuation
+#     text = remove_digits(text)  # Remove digits
+#     text = remove_stopwords(text)  # Remove stopwords
+#     tokens = word_tokenize(text)  # Tokenize
+#     tokens = remove_special_symbols(tokens)  # Remove special characters
+#     tokens = remove_empty_tokens(tokens)  # Remove empty tokens
+#     tokens = lemmatize_text(tokens)  # Lemmatize tokens
+#     text = ' '.join(tokens)  # Join tokens back into text
+#     return text
+
+# # Function to expand contractions
+# def expand_contractions(text):
+#     return contractions.fix(text)
+
+# # Chat words mapping dictionary
+# chat_word_mapping = {
+#     # Your chat word mappings here
+#        "afaik": "as far as i know",
+#     "afk": "away from keyboard",
+#     "asap": "as soon as possible",
+#     "atk": "at the keyboard",
+#     "atm": "at the moment",
+#     "a3": "anytime, anywhere, anyplace",
+#     "bak": "back at keyboard",
+#     "bbl": "be back later",
+#     "bbs": "be back soon",
+#     "bfn": "bye for now",
+#     "b4n": "bye for now",
+#     "brb": "be right back",
+#     "brt": "be right there",
+#     "btw": "by the way",
+#     "b4": "before",
+#     "b4n": "bye for now",
+#     "cu": "see you",
+#     "cul8r": "see you later",
+#     "cya": "see you",
+#     "faq": "frequently asked questions",
+#     "fc": "fingers crossed",
+#     "fwiw": "for what it's worth",
+#     "fyi": "for your information",
+#     "gal": "get a life",
+#     "gg": "good game",
+#     "gn": "good night",
+#     "gmta": "great minds think alike",
+#     "gr8": "great!",
+#     "g9": "genius",
+#     "ic": "i see",
+#     "icq": "i seek you (also a chat program)",
+#     "ilu": "ilu: i love you",
+#     "imho": "in my honest/humble opinion",
+#     "imo": "in my opinion",
+#     "iow": "in other words",
+#     "irl": "in real life",
+#     "kiss": "keep it simple, stupid",
+#     "ldr": "long distance relationship",
+#     "lmao": "laugh my ass off",
+#     "lol": "laughing out loud",
+#     "ltns": "long time no see",
+#     "l8r": "later",
+#     "mte": "my thoughts exactly",
+#     "m8": "mate",
+#     "nrn": "no reply necessary",
+#     "oic": "oh i see",
+#     "pita": "pain in the ass",
+#     "prt": "party",
+#     "prw": "parents are watching",
+#     "rofl": "rolling on the floor laughing",
+#     "roflol": "rolling on the floor laughing out loud",
+#     "rotflmao": "rolling on the floor laughing my ass off",
+#     "sk8": "skate",
+#     "stats": "your sex and age",
+#     "asl": "age, sex, location",
+#     "thx": "thank you",
+#     "ttfn": "ta-ta for now!",
+#     "ttyl": "talk to you later",
+#     "u2": "you too",
+#     "u4e": "yours for ever",
+#     "wb": "welcome back",
+#     "wtf": "what the fuck",
+#     "wtg": "way to go!",
+#     "wuf": "where are you from?",
+#     "w8": "wait...",
+#     "7k": "sick:-d laughter",
+# }
+
+# # Function to transform chat words
+# def transform_chat_words(text):
+#     for chat_word, expanded_form in chat_word_mapping.items():
+#         text = text.replace(chat_word, expanded_form)
+#     return text
+
+# def translate_to_english(text):
+#     try:
+#         blob = TextBlob(text)
+#         lang = blob.detect_language()
+#         if lang != 'en':
+#             translated_blob = blob.translate(to='en')
+#             translation = str(translated_blob)
+#         else:
+#             translation = text
+#         return translation
+#     except Exception as e:
+#         print(f"Translation error: {e}")
+#         return None
+
+
+
+# # Function to remove URLs
+# def remove_urls(text):
+#     url_pattern = re.compile(r'https?://\S+|www\.\S+')
+#     return url_pattern.sub('', text)
+
+# # Function to remove HTML tags
+# def remove_html_tags(text):
+#     clean_text = re.sub(r'<[^>]*>', '', text)
+#     return clean_text
+
+# # Function to remove punctuation
+# def remove_punctuation(text):
+#     return text.translate(str.maketrans('', '', string.punctuation))
+
+# # Function to remove digits
+# def remove_digits(text):
+#     return re.sub(r'\d+', '', text)
+
+# # Function to remove stopwords
+# stop_words = set(stopwords.words('english'))
+# def remove_stopwords(text):
+#     words = text.split()
+#     filtered_words = [word for word in words if word.lower() not in stop_words]
+#     return ' '.join(filtered_words)
+
+# # Function to remove special symbols
+# def remove_special_symbols(tokens):
+#     cleaned_tokens = []
+#     for token in tokens:
+#         pattern = r'[^a-zA-Z0-9\s]'
+#         cleaned_token = re.sub(pattern, '', token)
+#         cleaned_tokens.append(cleaned_token)
+#     return cleaned_tokens
+
+# # Function to remove empty tokens
+# def remove_empty_tokens(tokens):
+#     return [token for token in tokens if token.strip()]
+
+# # Function to lemmatize text using spaCy
+# nlp = spacy.load('en_core_web_sm')
+# def lemmatize_text(tokens):
+#     doc = nlp(' '.join(tokens))
+#     lemmatized_tokens = [token.lemma_ for token in doc]
+#     return lemmatized_tokens
 
 # Title and description
 st.title("Depression Prediction App")
@@ -296,31 +296,31 @@ Enter some text related to your thoughts and feelings to get a prediction.
 # Input text area
 user_input = st.text_area("Enter your text here:")
 
-# Predict button
-if st.button("Predict"):
-  if user_input:
-    # Define class labels
-    class_labels = {0: "teenagers", 1: "depression"}
+# # Predict button
+# if st.button("Predict"):
+#   if user_input:
+#     # Define class labels
+#     class_labels = {0: "teenagers", 1: "depression"}
 
-    try:
-        # Preprocess the user input
-        preprocessed_input = preprocess_text(user_input)
+#     try:
+#         # Preprocess the user input
+#         preprocessed_input = preprocess_text(user_input)
 
-        # Vectorize the preprocessed user input
-        user_input_tfidf = vectorizer.transform([preprocessed_input])
+#         # Vectorize the preprocessed user input
+#         user_input_tfidf = vectorizer.transform([preprocessed_input])
 
-        # Predict using the loaded model
-        prediction = best_dt_classifier.predict(user_input_tfidf)
+#         # Predict using the loaded model
+#         prediction = best_dt_classifier.predict(user_input_tfidf)
 
-        # Map numeric prediction to class label
-        predicted_class = class_labels[prediction[0]]
+#         # Map numeric prediction to class label
+#         predicted_class = class_labels[prediction[0]]
 
-        # Display the result
-        st.write(f"The model predicts that the text indicates signs of {predicted_class}.")
+#         # Display the result
+#         st.write(f"The model predicts that the text indicates signs of {predicted_class}.")
         
-    except Exception as e:
-        st.error(f"An error occurred during prediction: {str(e)}")
+#     except Exception as e:
+#         st.error(f"An error occurred during prediction: {str(e)}")
 
-else:
-    st.write("Please enter some text to get a prediction.")
+# else:
+#     st.write("Please enter some text to get a prediction.")
 
