@@ -212,29 +212,23 @@ def lemmatize_text(tokens):
     lemmatized_tokens = [token.lemma_ for token in doc]
     return lemmatized_tokens
 
-# Title and description
-st.title("Depression Prediction App")
-st.write("""
-This app uses machine learning to predict the likelihood of depression based on text input.
-Enter some text related to your thoughts and feelings to get a prediction.
-""")
+if __name__ == '__main__':
+    st.title("Depression Prediction App")
+    st.write("""
+    This app predicts the likelihood of depression based on text input.
+    Enter some text related to your thoughts and feelings to get a prediction.
+    """)
 
-# Input text area
-user_input = st.text_area("Enter your text here:")
+    user_input = st.text_area("Enter your text here:")
 
-# Predict button
-if st.button("Predict"):
-    if user_input:
-        # Vectorize the user input
-        user_input_tfidf = vectorizer.transform([user_input])
-
-        # Predict using the loaded model
-        prediction = best_algo.predict(user_input_tfidf)
-
-        # Display the result
-        if prediction[0] == 1:
-            st.write("The model predicts that the text indicates signs of depression.")
+    if st.button("Predict"):
+        if user_input:
+            preprocessed_input = preprocess_text(user_input)
+            user_input_tfidf = vectorizer.transform([preprocessed_input])
+            prediction = best_algo.predict(user_input_tfidf)
+            if prediction[0] == 1:
+                st.write("The model predicts that the text indicates signs of depression.")
+            else:
+                st.write("The model predicts that the text does not indicate signs of depression.")
         else:
-            st.write("The model predicts that the text does not indicate signs of depression.")
-    else:
-        st.write("Please enter some text to get a prediction.")
+            st.write("Please enter some text to get a prediction.")
