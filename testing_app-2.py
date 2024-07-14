@@ -61,10 +61,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
 #import dataset
-from google.colab import drive
-drive.mount('/content/drive')
-file_path = '/content/drive/My Drive/preprocessing2.csv'
-new_df = pd.read_csv(file_path)
+filepath = "/Users/huiyee/Downloads/Study/Year3Sem1/FYP/preprocessing2.csv"
+new_df = pd.read_csv(filepath)
 
 # Function to remove inner spaces within tokens
 def remove_inner_spaces(token_list):
