@@ -32,30 +32,98 @@ with open(os.path.join(save_path, 'best_algo.pkl'), 'wb') as f:
 """
 
 !pip install nltk
-
 import streamlit as st
 import pickle
 import re
 import string
 import nltk
+import pandas as pd
+import os
+import spacy
+import contractions
+
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from textblob import TextBlob, Translator
 from textblob import TextBlob
 from Bio.SeqUtils import sequences
+from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report
+from sklearn.model_selection import GridSearchCV
+from gensim.models import Word2Vec
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+from langdetect import detect
+from textblob import TextBlob, Translator
+
+#import dataset
+filepath = "/Users/huiyee/Downloads/Study/Year3Sem1/FYP/preprocessing2.csv"
+new_df = pd.read_csv(filepath)
+
+# Function to remove inner spaces within tokens
+def remove_inner_spaces(token_list):
+    return ["".join(token.split()) for token in token_list]
+
+# Apply the function to the 'port_stem' column
+new_df['cleaned_tokens'] = new_df['port_stem'].apply(eval)  # Convert string representation of list to actual list
+new_df['cleaned_tokens'] = new_df['cleaned_tokens'].apply(remove_inner_spaces)
+
+# Convert lists of tokens to strings
+new_df['joined_tokens'] = new_df['cleaned_tokens'].apply(lambda tokens: " ".join(tokens))
+
+# Drop rows with NaN in 'joined_tokens'
+new_df = new_df.dropna(subset=['joined_tokens'])
+
+# Drop rows with empty 'joined_tokens' strings
+new_df = new_df[new_df['joined_tokens'].str.strip() != '']
+
+
+# Initialize the TF-IDF Vectorizer
+vectorizer = TfidfVectorizer()
+
+# Apply the TF-IDF vectorizer to the joined token strings
+tfidf_matrix = vectorizer.fit_transform(new_df['joined_tokens'])
+
+# Verify the shape of the resulting TF-IDF matrix
+print(tfidf_matrix.shape)
+
+X_train, X_test, y_train, y_test = train_test_split(tfidf_matrix, new_df['class'], test_size=0.2, random_state=42)
+
+
+# Initialize the Decision Tree Classifier with the best parameters
+best_dt_classifier = DecisionTreeClassifier(criterion='gini', max_depth=20, min_samples_leaf=2, min_samples_split=2, random_state=42)
+
+# Fit the classifier to the training data
+best_dt_classifier.fit(X_train, y_train)
+
+# Predict the labels for the test set
+y_pred = best_dt_classifier.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+report = classification_report(y_test, y_pred)
+
+# Print the accuracy and classification report
+print(f"Accuracy: {accuracy:.4f}")
+
 
 # Load the pickled files
 save_path = '/Users/huiyee/Downloads/Study/Year3Sem2/FYP Project/backend'
 
 with open(os.path.join(save_path, 'new_df.pkl'), 'rb') as f:
-    new_df = pickle.load(f)
+    pickle.dump(new_df, f)
 
 with open(os.path.join(save_path, 'tfidf_matrix.pkl'), 'rb') as f:
-    vectorizer = pickle.load(f)
+    pickle.dump(tfidf_matrix, f)
 
 with open(os.path.join(save_path, 'best_dt_classifier.pkl'), 'rb') as f:
-    best_algo = pickle.load(f)
+    pickle.dump(best_dt_classifier, f)
 
 # Define preprocessing functions
 def preprocess_text(text):
@@ -159,7 +227,8 @@ def transform_chat_words(text):
 # Function to translate text to English
 def translate_to_english(text):
     try:
-        if detect_langs(text) != 'en':
+        lang = detect(text)
+        if lang != 'en':
             translator = Translator(to_lang="en")
             translation = translator.translate(text)
         else:
@@ -168,6 +237,7 @@ def translate_to_english(text):
     except Exception as e:
         print(f"Translation error: {e}")
         return None
+
 
 # Function to remove URLs
 def remove_urls(text):
@@ -214,23 +284,29 @@ def lemmatize_text(tokens):
     lemmatized_tokens = [token.lemma_ for token in doc]
     return lemmatized_tokens
 
-if __name__ == '__main__':
-    st.title("Depression Prediction App")
-    st.write("""
-    This app predicts the likelihood of depression based on text input.
-    Enter some text related to your thoughts and feelings to get a prediction.
-    """)
+# Title and description
+st.title("Depression Prediction App")
+st.write("""
+This app uses machine learning to predict the likelihood of depression based on text input.
+Enter some text related to your thoughts and feelings to get a prediction.
+""")
 
-    user_input = st.text_area("Enter your text here:")
+# Input text area
+user_input = st.text_area("Enter your text here:")
 
-    if st.button("Predict"):
-        if user_input:
-            preprocessed_input = preprocess_text(user_input)
-            user_input_tfidf = vectorizer.transform([preprocessed_input])
-            prediction = best_algo.predict(user_input_tfidf)
-            if prediction[0] == 1:
-                st.write("The model predicts that the text indicates signs of depression.")
-            else:
-                st.write("The model predicts that the text does not indicate signs of depression.")
+# Predict button
+if st.button("Predict"):
+    if user_input:
+        # Vectorize the user input
+        user_input_tfidf = vectorizer.transform([user_input])
+
+        # Predict using the loaded model
+        prediction = best_dt_classifier.predict(user_input_tfidf)
+
+        # Display the result
+        if prediction[0] == 1:
+            st.write("The model predicts that the text indicates signs of depression.")
         else:
-            st.write("Please enter some text to get a prediction.")
+            st.write("The model predicts that the text does not indicate signs of depression.")
+    else:
+        st.write("Please enter some text to get a prediction.")
