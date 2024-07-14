@@ -31,6 +31,8 @@ with open(os.path.join(save_path, 'best_algo.pkl'), 'wb') as f:
     pickle.dump(best_algo, f)
 """
 
+!pip install nltk
+
 import streamlit as st
 import pickle
 import re
